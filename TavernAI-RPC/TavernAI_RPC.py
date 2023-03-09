@@ -1,39 +1,28 @@
-import pyautogui
+import http.server
+import socketserver
+from http import HTTPStatus
+import pypresence
+import json
 import time
-from selenium import webdriver
-from pypresence import Presence
 
-# Initialize the Discord Rich Presence client
-client_id = '1078188469458841690'
-RPC = Presence(client_id)
-RPC.connect()
+client_id = "1078188469458841690"  # replace with your Discord application's client ID
+rpc = pypresence.Presence(client_id)
+rpc.connect()
 
-RPC.update(state='Browsing the web', details='Chrome', large_image='chrome')
+PORT = 8000
 
-# Initialize the Selenium WebDriver for Chrome
-driver = webdriver.Chrome()
+class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
+    def do_POST(self):
+        content_length = int(self.headers.get('Content-Length', 0))
+        post_data = self.rfile.read(content_length)
+        data = json.loads(post_data.decode())
+        ch_name = data.get('ch_name','')
+        avatar_str = "C:/Users/Maks/Downloads/newtavern/Tavern/TavernAI/public/characters/" + ch_name + ".png"
+        print(avatar_str)
+        rpc.update(details=ch_name, large_image=avatar_str)
+        self.send_response(HTTPStatus.OK)
+        self.end_headers()
 
-while True:
-    # Get the title of the current Chrome tab
-    current_tab_title = pyautogui.getActiveWindowTitle()
-    print(pyautogui.getActiveWindowTitle())
-
-    if current_tab_title == 'Tavern.AI - Google Chrome':
-        # Load the TavernAI website
-        driver.get('http://127.0.0.1:8000')
-
-        # Wait for the page to load
-        time.sleep(5)
-
-        # Get the name of the current channel on TavernAI
-        channel_name_element = driver.find_element_by_class_name('ch_name')
-        channel_name = channel_name_element.get_attribute('innerHTML').strip()
-
-        # Set the presence if the user is on the TavernAI tab
-        RPC.update(state='Playing TavernAI', details=f'In #{channel_name}', large_image='tavernai', small_image='playing')
-
-    time.sleep(5)
-
-# Close the Selenium WebDriver and RPC connection when done
-driver.quit()
-RPC.close()
+with socketserver.TCPServer(("", PORT), MyRequestHandler) as httpd:
+    print(f"Serving at port {PORT}")
+    httpd.serve_forever()
