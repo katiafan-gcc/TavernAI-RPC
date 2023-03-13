@@ -51,23 +51,23 @@ class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # check if character exists already
         if chardata:
-            rpc.update(details="Talking to: " + chardata[0],
+            rpc.update(details="Chatting with " + chardata[0],
                        large_image=chardata[1],
                        large_text="Currently Roleplaying",
                        small_image="tavern")
 
         # otherwise do stuff
         else:
-            avatar_path = os.path.abspath("C:/Users/thatr/Documents/newtavern/Tavern/TavernAI/public/characters/" + ch_name + ".png")
+            avatar_path = os.path.abspath("C:/Users/"+ os.environ.get("USERNAME") + "/Documents/Tavern/TavernAI/public/characters/" + ch_name + ".png")
             avatar_url = "file:///" + avatar_path.replace("\\", "/")
 
             # send request to catbox.moe
             with open(avatar_path, "rb") as f:
                 files = {"fileToUpload": f}
-                data = {"reqtype": "fileupload", "userhash": ""}
+                data = {"reqtype": "fileupload", "userhash": ""} # anonymous upload
                 response = requests.post(url, data=data, files=files)
 
-            rpc.update(details="Talking to: " + ch_name, 
+            rpc.update(details="Chatting with " + ch_name, 
                        large_image=response.text, 
                        large_text="Currently Roleplaying",
                        small_image="tavern")
